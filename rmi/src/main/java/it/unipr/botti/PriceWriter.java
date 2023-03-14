@@ -14,8 +14,8 @@ import java.rmi.RemoteException;
  */
 
 public interface PriceWriter extends Remote {
-  void sendSellingPrice(final int t) throws RemoteException;
+  void sendSellingPriceToClient(final int t) throws RemoteException;
   int getServerPrice() throws RemoteException;
-  boolean isBufferReady() throws RemoteException;
-  void setBufferReaded() throws RemoteException;
+  boolean isBufferEmpty() throws RemoteException;
+  void setBufferToEmpty() throws RemoteException;
 }

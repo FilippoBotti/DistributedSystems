@@ -4,7 +4,7 @@ import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 
 /**
- * Client is in charge of saving a activity object with its properties.
+ * PriceWriterImpl (RMI) is the class implementation of PriceWriter's interface.
  * 
  * @author      Filippo Botti <filippo.botti2@studenti.unipr.it>
  * 
@@ -15,7 +15,7 @@ import java.rmi.server.UnicastRemoteObject;
 public class PriceWriterImpl extends UnicastRemoteObject implements PriceWriter {
   private static final long serialVersionUID = 1L;
   private static int serverPrice;
-  private static boolean isBufferReady;
+  private static boolean isBufferEmpty;
 
 
   /**
@@ -25,7 +25,7 @@ public class PriceWriterImpl extends UnicastRemoteObject implements PriceWriter 
    */
     
   public PriceWriterImpl() throws RemoteException {
-    isBufferReady = false;
+    isBufferEmpty = true;
     serverPrice = 0;
   }
 
@@ -44,26 +44,26 @@ public class PriceWriterImpl extends UnicastRemoteObject implements PriceWriter 
   /**
    * This method sets the price and sets buffer to ready (which means that the server has generated a new price).
    * This method is used by the server only.
-   * @param int receivedServerPrice
+   * @param int price
    * @throws RemoteException
    */
 
   @Override
-  public void sendSellingPrice(final int receivedServerPrice) throws RemoteException {
-    serverPrice = receivedServerPrice;
-    isBufferReady = true;
+  public void sendSellingPriceToClient(final int price) throws RemoteException {
+    serverPrice = price;
+    isBufferEmpty = false;
   }
 
   /**
-   * This method tells if the butter is ready or empty.
+   * This method tells if the buffer is ready or empty.
    * This method is used by the clients only to see if the server has generated a new price.
    * @throws RemoteException
    */
 
   @Override
-  public boolean isBufferReady() throws RemoteException 
+  public boolean isBufferEmpty() throws RemoteException 
   {
-    return isBufferReady;
+    return isBufferEmpty;
   }
 
   /**
@@ -73,9 +73,9 @@ public class PriceWriterImpl extends UnicastRemoteObject implements PriceWriter 
    */
   
   @Override
-  public void setBufferReaded() throws RemoteException 
+  public void setBufferToEmpty() throws RemoteException 
   {
-    isBufferReady = false;
+    isBufferEmpty = true;
   }
 
 }

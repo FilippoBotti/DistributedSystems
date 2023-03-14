@@ -5,8 +5,7 @@ import java.rmi.server.UnicastRemoteObject;
 import java.util.Set;
 
 /**
- * SubscribeImpl is in charge of providing methods for communications between
- * server and clients. 
+ * SubscribeImpl (RMI) is the class implementation of Subscribe's interface.
  * 
  * @author      Filippo Botti <filippo.botti2@studenti.unipr.it>
  * 
@@ -81,20 +80,21 @@ public class SubscribeImpl extends UnicastRemoteObject implements Subscribe
   @Override
   public boolean sendPriceToServer(int price) throws RemoteException 
   {
-    System.out.println("Ricevuto client: " + price);
-    boolean response = false;
+    System.out.println("Received price from client: " + price);
+    boolean isSold = false;
     if(price>=serverSellingPrice){
-      System.out.println("Si può vendere: " + price + " >= " + serverSellingPrice);
-      response = true;
+      System.out.println("It can be sold: " + price + " >= " + serverSellingPrice);
+      isSold = true;
     }
     else {
-      System.out.println("Non si può vendere: " + price + " < " + serverSellingPrice);
+      System.out.println("It cannot be sold: " + price + " < " + serverSellingPrice);
     }
-    return response;
+    return isSold;
   }
 
   /**
    * This method sets the price from the server.
+   * It is used by the server only.
    * @param int price
    * @throws RemoteException
    */
@@ -102,7 +102,7 @@ public class SubscribeImpl extends UnicastRemoteObject implements Subscribe
   @Override
   public void setSellingPriceFromServer(int price) throws RemoteException
   {
-    System.out.println("Prezzo di vendita server: " + price);
+    System.out.println("Current server selling price: " + price);
     serverSellingPrice = price;
   }
   

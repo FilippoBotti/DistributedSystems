@@ -8,8 +8,6 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 /**
- * Client is in charge of saving a activity object with its properties.
- * 
  * @author      Filippo Botti <filippo.botti2@studenti.unipr.it>
  * 
  * @version     1.0
@@ -21,9 +19,18 @@ public class Server
   private static final int PORT = 1099;
   private static final int MAX = 200;
   private static final int MIN = 10;
-  private static final int MIN_CLIENTS = 1;
+  private static final int MIN_CLIENTS = 3;
   private static int serverPrice;
   
+  /**
+   * First of all the server wait for at least 3 clients.
+   * Then it generate the random price and it save it in the RMI service object (it will be used for the comparison with the clients price).
+   * After this the server communicates the price to all of the clients with the RMI priceWriters.
+   * If the subscribers is zero then the server can terminates.
+   * @param args
+   * @throws Exception
+   */
+
   public static void main(final String[] args) throws Exception
   {
     Random random = new Random();
@@ -37,25 +44,21 @@ public class Server
 
     System.out.println("\nServer running on port: " + PORT);
 
-    //attendo il numero necessario di client
     while(service.getWritersLength()<MIN_CLIENTS){
       Thread.sleep(1000);
-      System.out.println("Attendo il numero di client minimo (3) per partire, client connessi: " + service.getWritersLength());
+      System.out.println("Waiting for at least 3 clients. Current number of clients: " + service.getWritersLength());
     }
 
-    //se ho raggiunto il numero necessario di client
     while (service.getWritersLength()!=0)
     {
-      //genero prezzo random, lo comunico al subscribe perchè mi servirà successivamente per i confronti coi prezzi ricevuti dai client
       serverPrice = random.nextInt(MAX - MIN) + MIN;
       service.setSellingPriceFromServer(serverPrice);
       Thread.sleep(2000);
       try
       {
-        //comunico il prezzo ai client tramite il writer corrispondente
         for (PriceWriter w : writers)
         {
-          w.sendSellingPrice(serverPrice);
+          w.sendSellingPriceToClient(serverPrice);
         }
       }
       catch (Exception e)
@@ -63,7 +66,8 @@ public class Server
         continue;
       }
     }
-    System.out.println("Ho servito tutti i client, termino");
+
+    System.out.println("I served all clients. Goodbye!");
     UnicastRemoteObject.unexportObject(service, true);
     }
 }
