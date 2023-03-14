@@ -21,9 +21,8 @@ public class Server
   private static final int PORT = 1099;
   private static final int MAX = 200;
   private static final int MIN = 10;
-  private static final int MIN_CLIENTS = 10;
+  private static final int MIN_CLIENTS = 1;
   private static int serverPrice;
-  private static boolean isClientsReady = false;
   
   public static void main(final String[] args) throws Exception
   {
@@ -39,39 +38,32 @@ public class Server
     System.out.println("\nServer running on port: " + PORT);
 
     //attendo il numero necessario di client
-    while(!isClientsReady){
+    while(service.getWritersLength()<MIN_CLIENTS){
       Thread.sleep(1000);
       System.out.println("Attendo il numero di client minimo (3) per partire, client connessi: " + service.getWritersLength());
-      if(service.getWritersLength()>=MIN_CLIENTS){
-        isClientsReady = true;
-      }
     }
 
     //se ho raggiunto il numero necessario di client
-    while (true)
+    while (service.getWritersLength()!=0)
+    {
+      //genero prezzo random, lo comunico al subscribe perchè mi servirà successivamente per i confronti coi prezzi ricevuti dai client
+      serverPrice = random.nextInt(MAX - MIN) + MIN;
+      service.setSellingPriceFromServer(serverPrice);
+      Thread.sleep(2000);
+      try
       {
-        //genero prezzo random, lo comunico al subscribe perchè mi servirà successivamente per i confronti coi prezzi ricevuti dai client
-        serverPrice = random.nextInt(MAX - MIN) + MIN;
-        service.setSellingPriceFromServer(serverPrice);
-        Thread.sleep(2000);
-        try
+        //comunico il prezzo ai client tramite il writer corrispondente
+        for (PriceWriter w : writers)
         {
-          //comunico il prezzo ai client tramite il writer corrispondente
-          for (PriceWriter w : writers)
-          {
-            w.sendSellingPrice(serverPrice);
-          }
-        }
-        catch (Exception e)
-        {
-          continue;
-        }
-        //verifico se ho servito ogni client
-        if(service.getWritersLength()==0){
-          System.out.println("Ho servito tutti i client, termino");
-          UnicastRemoteObject.unexportObject(service, true);
-          System.exit(0);
+          w.sendSellingPrice(serverPrice);
         }
       }
+      catch (Exception e)
+      {
+        continue;
+      }
+    }
+    System.out.println("Ho servito tutti i client, termino");
+    UnicastRemoteObject.unexportObject(service, true);
     }
 }

@@ -17,6 +17,6 @@ public interface Subscribe extends Remote {
   void subscribe(final PriceWriter w) throws RemoteException;
   void unsubscribe(final PriceWriter w) throws RemoteException;
   int getWritersLength() throws RemoteException;
-  int sendPriceToServer(final int t) throws RemoteException;
+  boolean sendPriceToServer(final int t) throws RemoteException;
   void setSellingPriceFromServer(final int t) throws RemoteException;
 }

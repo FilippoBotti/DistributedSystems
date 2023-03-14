@@ -33,9 +33,9 @@ public class Client {
     {
       //se server ha comunicato prezzo
       if(w.isBufferReady()){
-        w.setBufferReaded();
         //prendo prezzo comunicato dal server e ne genero uno randomico nel client
         int serverPrice = w.getServerPrice();
+        w.setBufferReaded();
         clientPrice = random.nextInt(MAX - MIN) + MIN;
         System.out.println("Prezzo ricevuto dal server: " + serverPrice);
         System.out.println("Prezzo client generato: " + clientPrice);
@@ -45,12 +45,15 @@ public class Client {
           {
             //invio il prezzo e nello stesso metodo ricevo la risposta del server, aumento gli item acquistati a seconda della risposta
             System.out.println("Invio: " + clientPrice);
-            int response = service.sendPriceToServer(clientPrice);
-            items += response;
-            if(response==1)
-              System.out.println("Venduto, ho un totale di " + items + " elementi");
-            else
-              System.out.println("Non venduto, rimango con " + items + " elementi");
+            boolean isSold = service.sendPriceToServer(clientPrice);
+            if(isSold)
+            {
+              items ++;
+              System.out.println("Comprato, ho un totale di " + items + " elementi");
+            }
+            else{
+              System.out.println("Non comprato, rimango con " + items + " elementi");
+            }
           }
           catch (Exception e)
           {
@@ -65,6 +68,5 @@ public class Client {
     System.out.print("Ho raggiunto i 10 elementi, termino");
     service.unsubscribe(w);
     UnicastRemoteObject.unexportObject(w, true);
-    System.exit(0);
   }
 }

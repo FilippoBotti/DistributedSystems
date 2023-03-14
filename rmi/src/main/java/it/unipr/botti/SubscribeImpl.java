@@ -72,23 +72,23 @@ public class SubscribeImpl extends UnicastRemoteObject implements Subscribe
   /**
    * This method gets the price from the client and verifies if it is greater than the server's price.
    * If it's greater, the server sells one item to the client, else nothing is done.
-   * An integer is returned as aknoledgment.
+   * A boolean is returned as aknoledgment: if it's true it means that the server has sold one item to the client.
    * @param int price
    * @return response
    * @throws RemoteException
    */
 
   @Override
-  public int sendPriceToServer(int price) throws RemoteException 
+  public boolean sendPriceToServer(int price) throws RemoteException 
   {
     System.out.println("Ricevuto client: " + price);
-    int response = 0;
+    boolean response = false;
     if(price>=serverSellingPrice){
-      System.out.println("Si può vendere: " + price + " <= " + serverSellingPrice);
-      response++;
+      System.out.println("Si può vendere: " + price + " >= " + serverSellingPrice);
+      response = true;
     }
     else {
-      System.out.println("Non si può vendere: " + price + " > " + serverSellingPrice);
+      System.out.println("Non si può vendere: " + price + " < " + serverSellingPrice);
     }
     return response;
   }
