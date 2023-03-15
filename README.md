@@ -8,7 +8,7 @@ Each project contains the required classes and a main.
 
 ## Esercitazione 1
 
-Here, we had to build a simple client-server interation with rmi objects.
+Here we had to build a simple client-server interation with rmi objects.
 
 The project is composed of 4 classes:
 
