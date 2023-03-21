@@ -8,7 +8,6 @@ import java.util.Random;
  * ServerThread provides a multithread connection
  * 
  * @author      Filippo Botti <filippo.botti2@studenti.unipr.it>
- * @author      Simone Montali <simone.montali1@studenti.unipr.it>
  * 
  * @version     1.0
  * @since       1.0
@@ -17,10 +16,7 @@ import java.util.Random;
 public class ServerThread implements Runnable {
     private static int MAX = 200;
     private static int MIN = 10;
-    private static final long SLEEPTIME = 200;
-    private static int serverPrice;
-    private static int clientPrice;
-    private static boolean hasFinished = false;
+    private static final long SLEEPTIME = 1000;
     private Server server;
     private Socket socket;
 
@@ -40,30 +36,28 @@ public class ServerThread implements Runnable {
 
     /**
      * This method estabilishes every case of communication between server and client
-     * For ever new client it creates a new thread
-     * It provides every kind of request.
-     * The first thing is the LOGIN and it is necessary for all the successive requests
-     * Then we have: GET_EMPLOYEE (standard request or searched by headquarter or job),
-     * ADD, EDIT and DELETE EMPLOYEE
-     * and finally ADD, GET, EDIT and DELETE HEADQUARTER
-     * For every request it checks exceptions and verifies the requirements.
-     * If all is good, it sends a message and does the requests.
+     * First of all the serverThread generates a new random price and communicates it to the corrispective client connected.
+     * Then it wait for the client response message: 
+     *      - CLIENT_PRICE_MESSAGE: The server receives a price from the client and check if it's greather or equal than the generated server price, then 
+     *                              the server sends a response message to the client with the selling acknoledgment.
+     *      - CLIENT_FULL_ITEMS: In this case the client ask for closing the communication with the server because it reaches the max amount of 
+     *                           items purchased. So the server close the socket and check if the client was the last, in this case it also close the server.
      */
     @Override
     public void run() {
         System.out.print("New connection accepted");
         Random random = new Random();
+
         try{
             this.outputStream = new ObjectOutputStream(new BufferedOutputStream(this.socket.getOutputStream()));
 
-
             while(true){
-                
                 int generatedServerPrice = random.nextInt(MAX - MIN) + MIN;
                 Message serverPrice = new Message(MessageType.SERVER_PRICE, generatedServerPrice);
                 this.outputStream.writeObject(serverPrice);
                 this.outputStream.flush();
-                System.out.println("Numero inviato: " + serverPrice.getNewObject());
+                System.out.println("Price generated from server: " + serverPrice.getMessageObject());
+
                 if(this.inputStream == null)
                 {
                     this.inputStream = new ObjectInputStream(new BufferedInputStream(this.socket.getInputStream()));
@@ -72,51 +66,50 @@ public class ServerThread implements Runnable {
                 Object receivedClientPrice = null;
                 receivedClientPrice = this.inputStream.readObject();
     
-    
                 if(receivedClientPrice != null && receivedClientPrice instanceof Message)
                 {
-                    System.out.println("Prezzo ricevuto: " + (int)((Message)receivedClientPrice).getNewObject());
                     switch (((Message)receivedClientPrice).getRequestType()){
                         case CLIENT_PRICE:
-                            int clientPrice = (int)((Message)receivedClientPrice).getNewObject();
+                            int clientPrice = (int)((Message)receivedClientPrice).getMessageObject();
                             Message serverResponse = new Message();
                             if(clientPrice>=generatedServerPrice)
                             {
+                                System.out.println("Received price from client: " + clientPrice + " >= " + generatedServerPrice + ". Server can sell.");
                                 serverResponse.setRequestType(MessageType.SERVER_RESPONSE);
-                                serverResponse.setNewObject(true);
+                                serverResponse.setMessageObject(true);
                             }
                             else
                             {
+                                System.out.println("Received price from client: " + clientPrice + " < " + generatedServerPrice + ". Server can't sell.");
                                 serverResponse.setRequestType(MessageType.SERVER_RESPONSE);
-                                serverResponse.setNewObject(false);
+                                serverResponse.setMessageObject(false);
                             }
                             outputStream.writeObject(serverResponse);
                             outputStream.flush();
                             break;
 
                         case CLIENT_FULL_ITEMS:
-                            System.out.println("Ricevuta close connection");
+                            System.out.println("Received close connection from client.");
                             if (this.server.getPool().getActiveCount() == 1)
                             {
-                                
+                                System.out.println("There are no clients left, turn down server.");
                                 this.server.close();
                             }
                             this.socket.close();
                             return;
+                        
+                        case CLIENT_PASS:
+                            break;
 
                         default:
                             break;
                     }
- 
                 }
-                Thread.sleep(1000);
-    
+                Thread.sleep(SLEEPTIME);
             }
             
         } catch (Exception e){
             e.printStackTrace();
         }
-        
     }
-
 }

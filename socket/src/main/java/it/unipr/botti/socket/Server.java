@@ -42,7 +42,7 @@ public class Server {
 
 
     /**
-     * This method provvide a connection between server and client
+     * This method provides a connection between server and client and generates a new thread for every cleient.
      * 
      * @throws IOException
      */
@@ -51,30 +51,23 @@ public class Server {
         boolean isReady = false;
         this.pool = new ThreadPoolExecutor(COREPOOL, MAXPOOL, IDLETIME, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>());
         System.out.println("I'm running on port"+SPORT);
-        // this.socket.setSoTimeout(0);
         while(true)
         {
             try
             {
-                    Socket s = this.socket.accept();
-                    this.pool.execute(new ServerThread(this, s));
-                    
+                Socket s = this.socket.accept();
+                this.pool.execute(new ServerThread(this, s));
             } catch (Exception e)
             {
                 break;
             }
         } 
-        System.out.println("Chiudo server");
         this.pool.shutdown();
-
     }
 
     /**
      * This method closes the socket
      */
-    
-
- 
     public void close()
     {
         try

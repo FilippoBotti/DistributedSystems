@@ -13,7 +13,7 @@ import java.io.Serializable;
 
 public class Message implements Serializable {
     private MessageType requestType;
-    private Serializable newObject;
+    private Serializable messageObject;
 
     private static final long serialVersionUID = 1L;
 
@@ -27,16 +27,13 @@ public class Message implements Serializable {
     /**
      * This constructor sets every parameters of the message
      *  
-     * @param String       username
-     * @param String       passwordHash
      * @param MessageType  requestType
-     * @param String       query
-     * @param Serializable newObject
+     * @param Serializable messageObject
      */
     
-    public Message(MessageType requestType, Serializable newObject ) {
+    public Message(MessageType requestType, Serializable messageObject ) {
         this.requestType = requestType;
-        this.newObject = newObject;
+        this.messageObject = messageObject;
     }
     
 
@@ -64,8 +61,8 @@ public class Message implements Serializable {
      * @return Serializable newObject
      */
     
-    public Serializable getNewObject() {
-        return newObject;
+    public Serializable getMessageObject() {
+        return messageObject;
     }
     
     /**
@@ -73,8 +70,8 @@ public class Message implements Serializable {
      * @param Serializable newObject
      */
     
-    public void setNewObject(Serializable newObject) {
-        this.newObject = newObject;
+    public void setMessageObject(Serializable messageObject) {
+        this.messageObject = messageObject;
     }
     
     /**
