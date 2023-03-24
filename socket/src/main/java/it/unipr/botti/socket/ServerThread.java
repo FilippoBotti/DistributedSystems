@@ -38,7 +38,8 @@ public class ServerThread implements Runnable {
      * This method estabilishes every case of communication between server and client
      * First of all the serverThread generates a new random price and communicates it to the corrispective client connected.
      * Then it wait for the client response message: 
-     *      - CLIENT_PRICE_MESSAGE: The server receives a price from the client and check if it's greather or equal than the generated server price, then 
+     *      - CLIENT_PRICE_MESSAGE: The server receives a price from the client and check if it's greather or equal than the generated server price (with
+     *                               this implementation it's always satisfied, an idea is to use a separated thread to generate the price), then 
      *                              the server sends a response message to the client with the selling acknoledgment.
      *      - CLIENT_FULL_ITEMS: In this case the client ask for closing the communication with the server because it reaches the max amount of 
      *                           items purchased. So the server close the socket and check if the client was the last, in this case it also close the server.
@@ -50,7 +51,10 @@ public class ServerThread implements Runnable {
 
         try{
             this.outputStream = new ObjectOutputStream(new BufferedOutputStream(this.socket.getOutputStream()));
-
+            while(!this.server.isReady()){
+                System.out.println("Wait for minimum number of client");
+                Thread.sleep(SLEEPTIME);
+            }
             while(true){
                 int generatedServerPrice = random.nextInt(MAX - MIN) + MIN;
                 Message serverPrice = new Message(MessageType.SERVER_PRICE, generatedServerPrice);

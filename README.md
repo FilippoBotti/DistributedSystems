@@ -16,6 +16,18 @@ The project is composed of 4 classes:
 * `Server` is the server. It accept at least 3 clients and then it generates random prices which will be comunicated to the clients with rmi objects.
 * `PriceWriter` is the rmi interface and `PriceWriterImpl` is the implementation that provides communications between server and client. It provides methods for: communicate server generated prices, get the generated server prices and check if the price is generated from server or not.
 * `Subscribe` is the rmi interface and `SubscribeImpl` is the implementation that provides communications between server and client. It provides methods for: subcribe and unsubscribe to the server, send client price to the server and so on...
+## Esercitazione 2
+
+Here we had to build a simple client-server interation with sockets.
+
+The project is composed of 4 classes:
+
+* `Client` is a basic client for the project.
+* `Server` is the server. It accept the clients and generate a new thread to serve every client.
+* `ServerThread` is the thread that serves every client.
+* `Message` is the message that client and server use to communicate.
+* `MessageType` is the message's type enum that cover every kind of client/server requests.
+
 <!-- ## Esercitazione 2
 
 The second exercise's idea is based on the management of a Wine shop. Here, people can buy wine, request desired wines by name, or by year. The basic classes for the project are:

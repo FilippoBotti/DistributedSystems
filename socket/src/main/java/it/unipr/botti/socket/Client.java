@@ -54,6 +54,7 @@ public class Client {
             outputStream.writeObject(clientCloseConnection);
             outputStream.flush();
             client.close();
+            System.out.println("Got 10 items. Shutdown client");
             System.exit(0);
           }
 

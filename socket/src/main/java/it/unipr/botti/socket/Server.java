@@ -25,9 +25,12 @@ public class Server {
     private static final int COREPOOL = 5;
     private static final int MAXPOOL = 100;
     private static final long IDLETIME = 5000;
+    private static final int MIN_CLIENTS = 3;
 
     private ServerSocket socket;
     private ThreadPoolExecutor pool;
+    private boolean isReady;
+
 
     /**
      * This constructor create a new socket
@@ -38,6 +41,7 @@ public class Server {
     public Server() throws IOException
     {
         this.socket = new ServerSocket(SPORT);
+        this.isReady = false;
     }
 
 
@@ -47,15 +51,18 @@ public class Server {
      * @throws IOException
      */
     public void run() throws IOException {
-        ArrayList<Socket> clientList = new ArrayList<Socket>();
-        boolean isReady = false;
+        int clientCount = 0;
         this.pool = new ThreadPoolExecutor(COREPOOL, MAXPOOL, IDLETIME, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>());
-        System.out.println("I'm running on port"+SPORT);
+        System.out.println("I'm running on port "+SPORT);
         while(true)
         {
             try
             {
                 Socket s = this.socket.accept();
+                clientCount++;
+                if(clientCount >=MIN_CLIENTS){
+                    setToReady();
+                }
                 this.pool.execute(new ServerThread(this, s));
             } catch (Exception e)
             {
@@ -78,6 +85,14 @@ public class Server {
         {
             e.printStackTrace();
         }
+    }
+
+    public boolean isReady(){
+        return this.isReady;
+    }
+
+    public void setToReady(){
+        this.isReady = true;
     }
 
     public ThreadPoolExecutor getPool()
