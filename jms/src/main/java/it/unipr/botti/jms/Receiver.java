@@ -2,6 +2,7 @@ package it.unipr.botti.jms;
 
 import javax.jms.JMSException;
 import javax.jms.Message;
+import javax.jms.ObjectMessage;
 import javax.jms.Queue;
 import javax.jms.QueueReceiver;
 import javax.jms.QueueSession;
@@ -23,18 +24,22 @@ public class Receiver
 {
   private static final String BROKER_URL   = "tcp://localhost:61616";
   private static final String BROKER_PROPS = "persistent=false&useJmx=false";
-  private static int id;
+  private int nodeId;
+  private static ActiveMQConnection connection;
+  private static QueueReceiver receiver;
 
-  public Receiver(final int queueId){
-    id = queueId;
+  public Receiver(final int nodeId){
+    this.nodeId = nodeId;
   }
-  /**
-   * Receives a sequence of messages.
-   *
-  **/
-  public void receive()
-  {
-    ActiveMQConnection connection = null;
+
+  public void createReceiverQueue(){
+    System.setProperty(
+                "org.apache.activemq.SERIALIZABLE_PACKAGES",
+                "java.util,org.apache.activemq,it.unipr.botti.jms");
+                System.setProperty(
+"org.apache.activemq.SERIALIZABLE_PACKAGES", "*");
+        
+    connection = null;
     try
     {
 
@@ -48,44 +53,78 @@ public class Receiver
       QueueSession session =
         connection.createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
 
-      String queueName = "queue/" + id;
+      String queueName = "queue/" + nodeId;
       Queue queue = session.createQueue(queueName);
 
-      QueueReceiver receiver = session.createReceiver(queue);
+      receiver = session.createReceiver(queue);
+      System.out.print("Succesfully created receiver queue " + receiver.getQueue().getQueueName() + "\n");
+    }
+    catch (Exception e)
+    {
+      e.printStackTrace();
+    }
 
-      while (true)
+  }
+  /**
+   * Receives a sequence of messages.
+   *
+  **/
+  public CustomMessage receiveElectionMessage(long timeout)
+  {
+    try
+    {
+      Message message = receiver.receive(timeout);
+
+      if (message instanceof ObjectMessage)
       {
-        Message message = receiver.receive();
-
-        if (message instanceof TextMessage)
-        {
-          System.out.println("Message: " + ((TextMessage) message).getText());
-        }
-        else
-        {
-          break;
-        }
+        CustomMessage mex = (CustomMessage)((ObjectMessage) message).getObject();
+        System.out.println(mex.toString());
+        return mex;
       }
     }
     catch (Exception e)
     {
       e.printStackTrace();
     }
-    finally
+    return new CustomMessage(0, "Coordinatore", MessageType.NEW_COORDINATOR);
+    
+  }
+
+  public MessageType receiveNewCordinatorMessage()
+  {
+    try
     {
-      if (connection != null)
+      Message message = receiver.receive();
+      System.out.println("ReceiviNG");
+      if (message instanceof ObjectMessage)
       {
-        try
-        {
-          connection.close();
-        }
-        catch (JMSException e)
-        {
-          e.printStackTrace();
-        }
+        CustomMessage mex = (CustomMessage)((ObjectMessage) message).getObject();
+        System.out.println(mex.toString());
+        return mex.getMessageType();
       }
     }
+    catch (Exception e)
+    {
+      e.printStackTrace();
+    }
+    return MessageType.ERROR;
   }
+
+
+public void closeReceiverQueue(){
+  if (connection != null)
+  {
+    try
+    {
+      connection.close();
+    }
+    catch (JMSException e)
+    {
+      e.printStackTrace();
+    }
+  }
+}
+
 
   /**
    * Starts the receiver.
@@ -97,6 +136,5 @@ public class Receiver
   **/
   public static void main(final String[] args)
   {
-    new Receiver(3).receive();
   }
 }
