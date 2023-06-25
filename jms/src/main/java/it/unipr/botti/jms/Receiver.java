@@ -77,8 +77,8 @@ public class Receiver
    * This method flushes the queue
    */
   public void flushQueue() throws JMSException {
-    while(receiver.receive(10)!=null){
-      System.out.println("Consumo mex");
+    while(receiver.receive(1)!=null){
+      System.out.println("Flushing queue");
     }
   }
   

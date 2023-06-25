@@ -88,7 +88,7 @@ public class Sender
       CustomMessage mex = new CustomMessage(this.nodeId, "Election", MessageType.ELECTION);
       ObjectMessage message = session.createObjectMessage(mex);
       for(int i=nodeId+1; i<queueSenders.size(); i++){
-        System.out.println("Sending election message to: " + queueSenders.get(i).getQueue().getQueueName());
+        //System.out.println("Sending election message to: " + queueSenders.get(i).getQueue().getQueueName());
         queueSenders.get(i).send(message);
       }
     }
