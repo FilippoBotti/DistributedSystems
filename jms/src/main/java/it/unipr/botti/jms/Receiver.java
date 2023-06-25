@@ -24,14 +24,20 @@ public class Receiver
 {
   private static final String BROKER_URL   = "tcp://localhost:61616";
   private static final String BROKER_PROPS = "persistent=false&useJmx=false";
-  private int nodeId;
   private static ActiveMQConnection connection;
   private static QueueReceiver receiver;
+
+  private int nodeId;
+
 
   public Receiver(final int nodeId){
     this.nodeId = nodeId;
   }
 
+  /**
+   * This method creates a receiver for the current node
+   * The queue name is in the format: queue/node_identifier
+   */
   public void createReceiverQueue(){
     System.setProperty(
                 "org.apache.activemq.SERIALIZABLE_PACKAGES",
@@ -58,6 +64,7 @@ public class Receiver
 
       receiver = session.createReceiver(queue);
       System.out.print("Succesfully created receiver queue " + receiver.getQueue().getQueueName() + "\n");
+      flushQueue();
     }
     catch (Exception e)
     {
@@ -65,6 +72,16 @@ public class Receiver
     }
 
   }
+
+  /*
+   * This method flushes the queue
+   */
+  public void flushQueue() throws JMSException {
+    while(receiver.receive(10)!=null){
+      System.out.println("Consumo mex");
+    }
+  }
+  
   /**
    * Receives a sequence of messages.
    *
@@ -78,36 +95,60 @@ public class Receiver
       if (message instanceof ObjectMessage)
       {
         CustomMessage mex = (CustomMessage)((ObjectMessage) message).getObject();
-        System.out.println(mex.toString());
+        //System.out.println(mex.toString());
         return mex;
       }
     }
     catch (Exception e)
     {
       e.printStackTrace();
+      return new CustomMessage(0, "Fail", MessageType.ERROR);
     }
-    return new CustomMessage(0, "Coordinatore", MessageType.NEW_COORDINATOR);
+    return new CustomMessage(0, "Coordinatore", MessageType.TIMEOUT_ELECTION);
     
   }
 
-  public MessageType receiveNewCordinatorMessage()
+  public CustomMessage receiveResourcesMessage(long timeout)
   {
     try
     {
-      Message message = receiver.receive();
-      System.out.println("ReceiviNG");
+      Message message = receiver.receive(timeout);
+
       if (message instanceof ObjectMessage)
       {
         CustomMessage mex = (CustomMessage)((ObjectMessage) message).getObject();
-        System.out.println(mex.toString());
-        return mex.getMessageType();
+        //System.out.println(mex.toString());
+        return mex;
       }
     }
     catch (Exception e)
     {
       e.printStackTrace();
+      return new CustomMessage(0, "Fail", MessageType.ERROR);
     }
-    return MessageType.ERROR;
+    return new CustomMessage(0, "Timeout", MessageType.TIMEOUT_RESOURCES);
+    
+  }
+
+  public CustomMessage receiveNewCordinatorMessage(long timeout)
+  {
+    try
+    {
+      Message message = receiver.receive(timeout);
+      //System.out.println("ReceiviNG");
+      if (message instanceof ObjectMessage)
+      {
+        CustomMessage mex = (CustomMessage)((ObjectMessage) message).getObject();
+        //System.out.println(mex.toString());
+        return mex;
+      }
+    }
+    catch (Exception e)
+    {
+      e.printStackTrace();
+      return new CustomMessage(0, "Fail", MessageType.ERROR);
+    }
+    return new CustomMessage(0, "Fail", MessageType.ERROR);
   }
 
 

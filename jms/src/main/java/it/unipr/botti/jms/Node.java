@@ -1,21 +1,19 @@
 package it.unipr.botti.jms;
 
-
-import org.apache.activemq.broker.BrokerFactory;
-import org.apache.activemq.broker.BrokerService;
-
 public class Node {
 
     private int id;
     private Receiver receiver;
     private Sender sender;
     private State state;
+    private int coordinatorId;
 
     public Node(final int id){
         this.id = id;
         this.receiver = new Receiver(id);
         this.sender = new Sender(id);
-        this.state = State.ATTIVO;
+        this.state = State.CANDIDATE;
+        this.coordinatorId = -1;
     }
 
     public void setState(State state){
@@ -33,30 +31,70 @@ public class Node {
 
     public void election(){
         try{
-            //booleano: se ricevo almeno un aknoledgment aspetto la comunicazione del coordinatore
+            //booleano: se ricevo almeno un acknowledgment aspetto la comunicazione del coordinatore
             CustomMessage receivedMessage;
-            boolean hasReceivedAck = false;
-            while(true){
-                receivedMessage = receiver.receiveElectionMessage(2000);
-                if(receivedMessage.getMessageType()==MessageType.ELECTION){
-                    //ricevuto messaggio di elezione, rispondo con ack e invio messaggio di elezione a tutti
-                    System.out.println("Ricevuto mex da: " + receivedMessage.getSenderId());
-                    sender.sendAcknowledgment(receivedMessage.getSenderId());
-                    sender.sendElectionMessage();
-                }
-                else if (receivedMessage.getMessageType()==MessageType.ACKNOWLEDGMENT){
-                    System.out.println("Ricevuto ack da: " + receivedMessage.getSenderId());
-                    hasReceivedAck = true;
-                }
-                else if (receivedMessage.getMessageType()==MessageType.NEW_COORDINATOR && !hasReceivedAck) {
-                    System.out.println("SONO IL COORDINATORE");
+            System.out.println("Election phase");
+            if(this.getState()==State.CANDIDATE){
+                sender.sendElectionMessage();
+            }                
+            receivedMessage = receiver.receiveElectionMessage(2000);
+            while(this.coordinatorId==-1){
+                switch (receivedMessage.getMessageType()) {
+                    case ELECTION:
+                        sender.sendAcknowledgment(receivedMessage.getSenderId(), MessageType.ELECTION_ACKNOWLEDGMENT);
+                        sender.sendElectionMessage();
+                        this.setState(State.WAITING_FOR_COORDINATOR);
+                        receivedMessage = receiver.receiveElectionMessage(5000);
+                        break;
+                    case ELECTION_ACKNOWLEDGMENT:
+                        System.out.println("Ack received, waiting for coordinator");
+                        this.setState(State.WAITING_FOR_COORDINATOR);
+                        receivedMessage = receiver.receiveNewCordinatorMessage(10000);
+                        break;
+                    case NEW_COORDINATOR:
+                        System.out.println("Received new coordinator");
+                        if (this.state != State.WAITING_FOR_COORDINATOR){
+                            sender.sendElectionMessage();
+                            receivedMessage = receiver.receiveElectionMessage(5000);
+                        }
+                        else {
+                            this.setState(State.EXECUTOR);
+                        }
+                        break;
+                    default:
+                    // ELECTION_TIME_OUT
+                        System.out.println("No ack received, i'm the coordinator");
+                        this.setState(State.COORDINATOR);
+                        this.coordinatorId = this.id;
+                        sender.sendMessageToAll();
+                        break;
                 }
             }
-           
-            
+            System.out.println("Election phase is done. My state is: " + this.state);
+            executionPhase();
         }
         catch (Exception e){
             e.printStackTrace();
+        }
+    }
+
+    public void executionPhase(){
+        while(true){
+            CustomMessage receivedMessage = receiver.receiveResourcesMessage(2000);
+            switch (receivedMessage.getMessageType()){
+                case NEW_COORDINATOR:
+                    System.out.println("Received new coordinator");
+                    this.coordinatorId = receivedMessage.getSenderId();
+                    this.setState(State.EXECUTOR);
+                    System.out.println("Election phase is done. My state is: " + this.state);
+                default:
+                    // ELECTION_TIME_OUT
+                    // System.out.println("No ack received, i'm the coordinator");
+                    // this.setState(State.COORDINATOR);
+                    // this.coordinatorId = this.id;
+                    // sender.sendMessageToAll();
+                    break;
+            }
         }
     }
 
@@ -65,15 +103,15 @@ public class Node {
         int id = Integer.parseInt(args[0]);
         Node n = new Node(id);
 
+        System.out.println("Initializing node ...");
         n.sender.createSenderQueue();
         n.receiver.createReceiverQueue();
-        System.out.println("\n\n\n\n\n\n");
+        System.out.println("\n\n");
         try{
-            Thread.sleep(5000);
+            Thread.sleep(4000);
         } catch (Exception e){
             e.printStackTrace();
         }
-        n.sender.sendElectionMessage();
         n.election();
        
     }

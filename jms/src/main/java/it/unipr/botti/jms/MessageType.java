@@ -2,7 +2,11 @@ package it.unipr.botti.jms;
 
 public enum MessageType {
     ELECTION,
-    ACKNOWLEDGMENT,
+    ELECTION_ACKNOWLEDGMENT,
     NEW_COORDINATOR,
     ERROR,
+    TIMEOUT_ELECTION,
+    ASK_FOR_RESOURCES,
+    RESOURCES_ACKNOWLEDGMENT,
+    TIMEOUT_RESOURCES
 }
