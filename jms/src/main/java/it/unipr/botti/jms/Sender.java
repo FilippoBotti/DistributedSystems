@@ -101,7 +101,7 @@ public class Sender
     try{
       CustomMessage mex = new CustomMessage(this.nodeId, "Resources", messageType);
       ObjectMessage message = session.createObjectMessage(mex);
-      System.out.println(queueSenders.get(coordinatorID).getQueue().getQueueName()) ;
+      //System.out.println(queueSenders.get(coordinatorID).getQueue().getQueueName()) ;
 
       queueSenders.get(coordinatorID).send(message);
     }

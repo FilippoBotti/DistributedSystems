@@ -6,10 +6,10 @@ import javax.jms.JMSException;
 
 public class Node {
 
-    private static final int EXECUTION_TIME = 10000;
+    private static final int DEFAULT_EXECUTION_TIME = 10000;
     private static final long PING_RATE_TIME = 1000;
     private static final long PING_CHECK_RATE_TIME = 6000;
-    private static final long DEFAULT_WAIT_TIME = 5000;
+    private static final long DEFAULT_WAIT_TIME = 1000;
 
     private int id;
     private Receiver receiver;
@@ -23,7 +23,7 @@ public class Node {
     private static final int MAX = 100;
 	private static final int MIN = 0;
 	private static final int H = 20;
-	private static final int K = 1;
+	private static final int K = 5;
     private long prevMillisPing;
     private long initResoruceTime;
     private long lastPingReceived;
@@ -60,14 +60,17 @@ public class Node {
         return this.id;
     }
 
-    public void consumeResource(){
+    public void consumeResource(int delta){
         if(System.currentTimeMillis() - this.prevMillisPing >= PING_RATE_TIME){
             sender.sendResourcesMessage(this.coordinatorId, MessageType.PING_RESOURCE);
         }
-        if(System.currentTimeMillis() -this.initResoruceTime >=EXECUTION_TIME){
+        if(System.currentTimeMillis() -this.initResoruceTime >=DEFAULT_EXECUTION_TIME*delta){
             this.setState(State.EXECUTOR_IDLE);
             sender.sendResourcesMessage(this.coordinatorId, MessageType.FREE_RESOURCE);
-            System.out.println("Resource consumed. My state is: " + this.getState());
+            System.out.println("\uD83C\uDD93 Resource consumed. My state is: " + this.getState());
+            int randomWaitTime = random.nextInt(5) + 1;
+            System.out.println("\uD83D\uDE34 I will sleep for " +randomWaitTime + " seconds");
+            sleeping(randomWaitTime);
         }
     }
 
@@ -82,46 +85,51 @@ public class Node {
     public void changeState() throws JMSException {
         int randomInt = this.random.nextInt(MAX - MIN) + MIN;
 
-        if (randomInt < K+H && this.state!=State.DEAD && this.getState()!=State.COORDINATOR)
+        if (randomInt < K && this.getState()!=State.DEAD)
         {                
-            System.out.println("I'm dead");
+            System.out.println("\uD83D\uDC80 I'm dead");
             this.setState(State.DEAD);
             this.resource = ResourceState.FREE; 
             this.coordinatorId=-1;
             this.nodeWithResource = -1;
-            sleeping();
+            sleeping(5);
         }
-        else if(randomInt >MAX -(K+H) && this.getState()==State.DEAD){
+        else if(randomInt < K + H && this.getState()==State.DEAD){
                 this.receiver.flushQueue();
                 this.setState(State.CANDIDATE);
                 this.resource = ResourceState.FREE;
                 this.coordinatorId=-1;
                 this.nodeWithResource = -1;
-                System.out.println("I'm back");
+                System.out.println("\uD83D\uDD19 I'm back");
                 election();     
             }
+        
     }
+
     public void askForResource() {
         int randomInt = random.nextInt(MAX - MIN) + MIN;
-
-        // 50% propability
         if (randomInt < 50)
         {
             sender.sendResourcesMessage(this.coordinatorId, MessageType.ASK_FOR_RESOURCES);
             this.setState(State.WAITING_FOR_RESOURCE);
             System.out.println("I'm asking for the resource. My state is " + this.getState());
         }
-        
+        else {
+            int randomWaitTime = random.nextInt(5) + 1;
+            System.out.println("\uD83D\uDE34 I don't need the resource, I will sleep for " + randomWaitTime +  " seconds");
+            sleeping(randomWaitTime);
+        }
     }
 
-    public void sleeping(){
+    public void sleeping(int delta){
         try{
-            Thread.sleep(50000);
+            Thread.sleep(delta*DEFAULT_WAIT_TIME);
         }
         catch (Exception e) {
             e.printStackTrace();
         }
     }
+
     public void election(){
         try{
             //booleano: se ricevo almeno un acknowledgment aspetto la comunicazione del coordinatore
@@ -170,7 +178,7 @@ public class Node {
                         break;
                 }
             }
-            System.out.println("Election phase is done. My state is: " + this.state);
+            System.out.println("Election phase is done. My state is: " + this.state +"\n");
         }
         catch (Exception e){
             e.printStackTrace();
@@ -180,13 +188,14 @@ public class Node {
     public void executionPhase() throws JMSException{
         while(true){
             if(this.getState()==State.EXECUTOR_WITH_RESOURCE){
-                consumeResource();
+                int randomInt = random.nextInt(3) + 1;
+                consumeResource(randomInt);
                 this.prevMillisPing = System.currentTimeMillis();
             }
             if(this.getState()==State.COORDINATOR && this.getResourceState()==ResourceState.BUSY){
                 checkResourceState();
             }
-            //changeState();
+            changeState();
             if(this.getState()!= State.COORDINATOR && this.getState()!=State.DEAD && this.getState()!=State.EXECUTOR_WITH_RESOURCE){
                 askForResource();
             }
@@ -257,23 +266,23 @@ public class Node {
                         break;
                     case RESOURCES_ACKNOWLEDGMENT:
                         this.setState(State.EXECUTOR_WITH_RESOURCE);
-                        System.out.println("Resource has been acquired. My state is: " + this.getState());
+                        int randomInt = random.nextInt(3) + 1;
+                        System.out.println("\u2705\uFE0F Resource has been acquired. I'll use the resource for " +randomInt *10+ " seconds. My state is: " + this.getState());
                         this.initResoruceTime = System.currentTimeMillis();
+                        consumeResource(randomInt);
                         break;
                     case RESOURCES_BUSY:
                         this.setState(State.EXECUTOR_IDLE);
-                        System.out.println("Resource has not been acquired. My state is: " + this.getState());
+                        System.out.println("\u274C\uFE0F Resource has not been acquired. My state is: " + this.getState());
+                        int randomWaitTime = random.nextInt(5) + 1;
+                        System.out.println("\uD83D\uDE34 I'll wait " + randomWaitTime + " seconds until I 'll make new request");
+                        sleeping(randomWaitTime);
                         break;
                     case PING_RESOURCE:
                         System.out.println("Ping, ok");
                         this.lastPingReceived = System.currentTimeMillis();
                         break;
                     default:
-                        // ELECTION_TIME_OUT
-                        // System.out.println("No ack received, i'm the coordinator");
-                        // this.setState(State.COORDINATOR);
-                        // this.coordinatorId = this.id;
-                        // sender.sendMessageToAll();
                         break;
                 }
             }
