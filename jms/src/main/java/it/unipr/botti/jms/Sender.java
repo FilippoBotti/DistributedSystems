@@ -97,9 +97,9 @@ public class Sender
     }
   }
 
-  public void sendResourcesMessage(int coordinatorID){
+  public void sendResourcesMessage(int coordinatorID, MessageType messageType){
     try{
-      CustomMessage mex = new CustomMessage(this.nodeId, "Resources", MessageType.ASK_FOR_RESOURCES);
+      CustomMessage mex = new CustomMessage(this.nodeId, "Resources", messageType);
       ObjectMessage message = session.createObjectMessage(mex);
       System.out.println(queueSenders.get(coordinatorID).getQueue().getQueueName()) ;
 
@@ -109,6 +109,7 @@ public class Sender
       e.printStackTrace();
     }
   }
+
 
   public void sendMessageToAll(){
     try{
@@ -128,7 +129,7 @@ public class Sender
 
   public void sendAcknowledgment(int id, MessageType ackMessageType){
     try{
-      System.out.println("Invio acknowledgment a: " + id);
+      System.out.println("Invio " + ackMessageType + " a: " + id);
       CustomMessage mex = new CustomMessage(this.getNodeIde(), "Acknoledgment", ackMessageType);
       ObjectMessage message = session.createObjectMessage(mex);
       queueSenders.get(id).send(message);

@@ -77,8 +77,16 @@ public class Receiver
    * This method flushes the queue
    */
   public void flushQueue() throws JMSException {
-    while(receiver.receive(1)!=null){
-      System.out.println("Flushing queue");
+    try {
+      Message msg=receiver.receive(1);
+      while(msg!=null){
+        CustomMessage mex = (CustomMessage)((ObjectMessage) msg).getObject();
+        //System.out.println(mex.toString());
+        msg=receiver.receive(1);
+      }
+    } catch (Exception e)
+    {
+      e.printStackTrace();
     }
   }
   
