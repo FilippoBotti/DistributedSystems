@@ -74,7 +74,7 @@ public class Node {
         if(System.currentTimeMillis() - this.prevMillisPing >= PING_RATE_TIME){
             sender.sendResourcesMessage(this.coordinatorId, MessageType.PING_RESOURCE);
         }
-        if(System.currentTimeMillis() - this.initResoruceTime >=DEFAULT_EXECUTION_TIME*delta){
+        if(System.currentTimeMillis() - this.initResoruceTime >= DEFAULT_EXECUTION_TIME*delta){
             this.setState(State.EXECUTOR_IDLE);
             sender.sendResourcesMessage(this.coordinatorId, MessageType.FREE_RESOURCE);
             System.out.println("\uD83C\uDD93 Resource consumed. My state is: " + this.getState());
